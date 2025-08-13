@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+if [ "$1" = "purge" ]; then
+  rm -f /etc/pg-backup.conf
+  rm -rf /etc/pg-backup.d
+  rm -rf /etc/pg-backup.hooks
+fi
+exit 0

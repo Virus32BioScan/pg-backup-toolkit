@@ -1,0 +1,4 @@
+/etc/pg-backup.conf
+/etc/pg-backup.d/nightly.conf
+/etc/pg-backup.d/hourly.conf
+/etc/pg-backup.d/weekend.conf

@@ -1,0 +1,9 @@
+Package: pg-backup-toolkit
+Version: 1.3.3
+Section: admin
+Priority: optional
+Architecture: all
+Depends: bash, coreutils, util-linux, tar, gzip | zstd, gnupg | gnupg2, systemd, adduser, mailutils | bsd-mailx | msmtp-mta
+Suggests: postgresql-client
+Maintainer: Toolkit Maintainer <admin@example.com>
+Description: PostgreSQL backup/restore toolkit.

@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+PROFILE="nightly"; TIMEOUT=0
+while [ $# -gt 0 ]; do case "$1" in -p|--profile) PROFILE="$2"; shift ;; --timeout) TIMEOUT="$2"; shift ;; -h|--help) echo "pg-backup-test [-p prof] [--timeout s]"; exit 0 ;; *) echo "unknown arg"; exit 1 ;; esac; shift; done
+BASE_CONF="/etc/pg-backup.conf"; [ -f "$BASE_CONF" ] && . "$BASE_CONF" || true
+PROF_CONF="/etc/pg-backup.d/${PROFILE}.conf"; [ -f "$PROF_CONF" ] && . "$PROF_CONF" || { echo "No profile config: $PROF_CONF"; exit 1; }
+BACKUP_BASE="${BACKUP_DIR:-/backups/postgres}"; LOG_DIR_CHECK="${LOG_DIR:-/var/log/pg-backup}"; TARGET_DIR="${BACKUP_BASE}/${PROFILE}"
+mkdir -p "$TARGET_DIR" "$LOG_DIR_CHECK"
+start_ts=$(date +%s)
+if id -u pgbackup >/dev/null 2>&1; then sudo -u pgbackup env PROFILE="$PROFILE" /usr/local/sbin/pg_backup.sh; else env PROFILE="$PROFILE" /usr/local/sbin/pg_backup.sh; fi
+[ "$TIMEOUT" -gt 0 ] 2>/dev/null && sleep "$TIMEOUT" || true
+newest="$(find "$TARGET_DIR" -type f -newermt "@$start_ts" -print0 | xargs -0 ls -1t 2>/dev/null | head -n1 || true)"
+[ -n "$newest" ] || { echo "no new files"; exit 2; }
+echo "Found: $newest"

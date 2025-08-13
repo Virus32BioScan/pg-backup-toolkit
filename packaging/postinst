@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+echo "pg-backup-toolkit installed."
+if ! id -u pgbackup >/dev/null 2>&1; then
+  adduser --system --home /home/pgbackup --no-create-home --group --disabled-login pgbackup || true
+  [ -d /home/pgbackup ] || (mkdir -p /home/pgbackup && chown pgbackup:pgbackup /home/pgbackup && chmod 750 /home/pgbackup)
+fi
+mkdir -p /backups/postgres /var/log/pg-backup /etc/pg-backup.hooks/pre.d /etc/pg-backup.hooks/post-db.d /etc/pg-backup.hooks/post.d
+chown -R pgbackup:pgbackup /backups/postgres /var/log/pg-backup || true
+chmod 750 /backups/postgres /var/log/pg-backup || true
+if command -v systemctl >/dev/null 2>&1; then systemctl daemon-reload || true; fi
+exit 0

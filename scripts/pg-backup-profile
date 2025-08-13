@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+CONF_DIR="/etc/pg-backup.d"
+case "${1:-}" in
+  create) [ -n "${2:-}" ] || { echo "usage: $0 create <name>"; exit 1; }
+    name="$2"; PF="${CONF_DIR}/${name}.conf"; [ ! -e "$PF" ] || { echo "exists"; exit 1; }
+    read -rp "INCLUDE_DBS: " INCLUDE_DBS || true
+    read -rp "EXCLUDE_DBS [template0 template1 postgres]: " EXCLUDE_DBS || true; EXCLUDE_DBS="${EXCLUDE_DBS:-template0 template1 postgres}"
+    read -rp "JOBS [4]: " JOBS || true; JOBS="${JOBS:-4}"
+    read -rp "KEEP_DAYS [30]: " KEEP_DAYS || true; KEEP_DAYS="${KEEP_DAYS:-30}"
+    read -rp "COMPRESS (none|gzip|zstd) [zstd]: " COMPRESS || true; COMPRESS="${COMPRESS:-zstd}"
+    read -rp "Enable GPG? (y/N): " ans || true; [[ "${ans:-N}" =~ ^[Yy] ]] && ENCRYPT_GPG=true || ENCRYPT_GPG=false
+    [ "$ENCRYPT_GPG" = true ] && read -rp "GPG_RECIPIENT: " GPG_RECIPIENT || GPG_RECIPIENT=""
+    install -m 0640 -o root -g pgbackup /dev/stdin "$PF" <<EOF
+PROFILE_NAME="${name}"
+INCLUDE_DBS="${INCLUDE_DBS}"
+EXCLUDE_DBS="${EXCLUDE_DBS}"
+JOBS="${JOBS}"
+KEEP_DAYS="${KEEP_DAYS}"
+COMPRESS="${COMPRESS}"
+ENCRYPT_GPG="${ENCRYPT_GPG}"
+GPG_RECIPIENT="${GPG_RECIPIENT}"
+BACKUP_DIR="/backups/postgres/${name}"
+LOG_DIR="/var/log/pg-backup"
+EOF
+    echo "Created $PF";;
+  list) for f in "$CONF_DIR"/*.conf; do b="${f##*/}"; echo "${b%.conf}"; done ;;
+  show) [ -n "${2:-}" ] || { echo "usage: $0 show <name>"; exit 1; }; cat "$CONF_DIR/${2}.conf" ;;
+  remove) [ -n "${2:-}" ] || { echo "usage: $0 remove <name>"; exit 1; }; rm -f "$CONF_DIR/${2}.conf"; echo "removed";;
+  *) echo "usage: $0 {create|list|show|remove}"; exit 1;;
+esac

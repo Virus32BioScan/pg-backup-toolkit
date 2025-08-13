@@ -1,0 +1,8 @@
+[Unit]
+Description=PG backups (%i) [example]
+[Timer]
+OnCalendar=*-*-* 02:15:00
+Persistent=true
+AccuracySec=1min
+[Install]
+WantedBy=timers.target

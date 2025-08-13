@@ -1,0 +1,16 @@
+[Unit]
+Description=PostgreSQL backups (%i)
+Wants=network-online.target
+After=network-online.target
+[Service]
+Type=oneshot
+User=pgbackup
+Group=pgbackup
+Environment=HOME=/home/pgbackup
+Environment=PROFILE=%i
+ExecStart=/usr/local/sbin/pg_backup.sh
+Nice=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true

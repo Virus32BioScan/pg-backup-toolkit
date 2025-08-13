@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+shopt -s nullglob
+printf "%-10s %-50s %-40s
+" "PROFILE" "BACKUP_DIR" "LOG_DIR"
+for f in /etc/pg-backup.d/*.conf; do
+  prof="${f##*/}"; prof="${prof%.conf}"
+  BACKUP_DIR=""; LOG_DIR=""
+  . "$f"
+  printf "%-10s %-50s %-40s
+" "$prof" "${BACKUP_DIR:-/backups/postgres/$prof}" "${LOG_DIR:-/var/log/pg-backup}"
+done
