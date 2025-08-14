@@ -1,3 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Проверки
+[ -d ".git" ] || { echo "Запусти в корне локального git-клона"; exit 1; }
+mkdir -p docs scripts systemd config packaging hooks/pre.d hooks/post-db.d hooks/post.d
+
+# --- Полная инструкция HTML (v1.3.3, цветовая разметка) ---
+cat > docs/guide.html <<'HTML'
 <!DOCTYPE html>
 <html lang="ru"><head><meta charset="utf-8" />
 <title>PG Backup Toolkit — ПОЛНАЯ инструкция v1.3.3</title>
@@ -103,3 +112,23 @@ pg_restore_select.sh --non-interactive --select-file /backups/postgres/nightly/2
 
 <hr /><p><small>Версия документа: <span class="green">1.3.3</span></small></p>
 </main></body></html>
+HTML
+
+# --- Исполняемые биты на скриптах ---
+chmod +x scripts/pg_backup.sh scripts/pg_restore_select.sh scripts/pg-backup-setup \
+           scripts/pg-backup-profile scripts/pg-backup-locate scripts/pg-backup-test 2>/dev/null || true
+
+# --- Коммит и пуш ---
+git add docs/guide.html scripts .github workflows 2>/dev/null || true
+git add -A
+git commit -m "Fix: restore FULL guide v1.3.3; ensure +x on scripts" || true
+# если remote уже добавлен:
+git push || true
+
+# --- (опционально) тэг для автосборки .deb в релиз ---
+if git ls-remote --exit-code --heads origin main >/dev/null 2>&1; then
+  git tag -f v1.3.3
+  git push -f origin v1.3.3 || true
+fi
+
+echo "Готово. Открой docs/guide.html на GitHub и проверь."
