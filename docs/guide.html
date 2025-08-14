@@ -10,7 +10,7 @@ main{max-width:1100px;margin:28px auto;padding:0 20px}
 h1,h2,h3{margin:18px 0 10px}h1{font-size:28px}h2{font-size:22px}h3{font-size:18px}
 code,kbd,pre{font-family:ui-monospace,Menlo,Consolas,monospace}
 pre{background:#fff;border:1px dashed #ddd;padding:12px;border-radius:8px;overflow:auto}
-ol,ul{padding-left:22px}li{margin:6px 0}
+ol{padding-left:22px}ul{padding-left:22px}li{margin:6px 0}
 .red{color:var(--red)}.yellow{color:var(--yellow)}.green{color:var(--green)}
 small{opacity:.9}
 table{border-collapse:collapse;width:100%;font-size:15px}
@@ -23,43 +23,56 @@ hr{border:0;border-top:1px solid #eee;margin:18px 0}
 <main>
 
 <h1>PG Backup Toolkit <span class="green">ПОЛНАЯ инструкция</span> <small>(v1.3.3)</small></h1>
-
-<p>Ключевые элементы — <span class="green">зелёным</span>, важно — <span class="yellow">жёлтым</span>, внимание — <span class="red">красным</span>. Без «плашек» — только цвет текста.</p>
+<p>Ключевые элементы — <span class="green">зелёным</span>, важно — <span class="yellow">жёлтым</span>, внимание — <span class="red">красным</span>. Без «плашек», только цветной текст.</p>
 
 <h2>0. Быстрый старт <span class="green">pg-backup-setup</span></h2>
 <pre>chmod 644 ./pg-backup-toolkit_1.3.3_all.deb
 sudo apt install ./pg-backup-toolkit_1.3.3_all.deb
 sudo pg-backup-setup
 </pre>
+<p>Мастер спросит <span class="green">PGHOST/PGPORT/PGUSER</span>, <span class="green">MAIL_TO/MAIL_FROM</span>, <span class="green">COMPRESS</span>, создаст профили (<span class="green">nightly/hourly/weekend</span>) и таймеры.</p>
 
-<h2>1. Что входит</h2>
+<h2>1. Состав</h2>
 <ol>
-  <li><span class="green">pg_backup.sh</span> — бэкап (<code>pg_dump -Fc -j</code>, gzip/zstd, GPG, ретеншн, отдельный лог на запуск, почтовый отчёт, хуки).</li>
-  <li><span class="green">pg_restore_select.sh</span> — восстановление с выбором копии (интерактив/CLI).</li>
-  <li><span class="green">pg-backup-setup</span> — мастер: общие параметры, профили, таймеры.</li>
-  <li><span class="green">pg-backup-profile</span> — профили: <code>create/list/show/remove</code>.</li>
-  <li><span class="green">pg-backup-locate</span> — где лежат бэкапы и логи.</li>
-  <li><span class="green">pg-backup-test</span> — тестовый прогон и проверка артефактов.</li>
-  <li><span class="green">systemd</span>: <code>pg-backup@.service</code> + таймеры.</li>
+  <li><span class="green">/usr/local/sbin/pg_backup.sh</span> — бэкапы (<code>pg_dump -Fc -j</code>, <span class="green">gzip/zstd</span>, <span class="green">GPG</span>, ретеншн, логи, почта, хуки).</li>
+  <li><span class="green">/usr/local/sbin/pg_restore_select.sh</span> — интерактивное/CLI восстановление с выбором копии.</li>
+  <li><span class="green">/usr/local/sbin/pg-backup-setup</span> — мастер конфигурации и расписаний.</li>
+  <li><span class="green">/usr/local/sbin/pg-backup-profile</span> — профили: create/list/show/remove.</li>
+  <li><span class="green">/usr/local/sbin/pg-backup-locate</span> — показать каталоги бэкапов и логов.</li>
+  <li><span class="green">/usr/local/sbin/pg-backup-test</span> — тестовый запуск и проверка артефакта.</li>
+  <li><span class="green">/etc/systemd/system/pg-backup@.service</span> + <span class="green">pg-backup@*.timer</span>.</li>
   <li><span class="green">/etc/pg-backup.conf</span>, <span class="green">/etc/pg-backup.d/*.conf</span>, <span class="green">/etc/pg-backup.hooks/*</span>.</li>
 </ol>
 
-<h2>2. Конфигурация</h2>
-<p><span class="green">/etc/pg-backup.conf</span>:</p>
+<h2>2. Требования</h2>
+<ul>
+  <li><span class="yellow">pg_dump</span> и <span class="yellow">psql</span> должны быть в <code>$PATH</code> (подойдут <span class="green">postgresql-client</span> или <span class="green">Postgres Pro client</span>).</li>
+  <li>Для почты — любой MTA: <span class="yellow">mailutils</span>/<span class="yellow">bsd-mailx</span>/<span class="yellow">msmtp</span> (необязательно).</li>
+</ul>
+
+<h2>3. Установка / обновление / удаление</h2>
+<pre>chmod 644 ./pg-backup-toolkit_1.3.3_all.deb
+sudo apt install ./pg-backup-toolkit_1.3.3_all.deb
+# обновление — той же командой
+# удаление (бэкапы и БД не трогаются):
+sudo apt purge pg-backup-toolkit
+</pre>
+
+<h2>4. Общая конфигурация</h2>
 <pre>PGHOST="127.0.0.1"
 PGPORT="5432"
 PGUSER="postgres"
-MAIL_TO=""
-MAIL_FROM=""
-COMPRESS="zstd"                 # none|gzip|zstd
+MAIL_TO="dba@example.com"
+MAIL_FROM="backups@example.com"
+COMPRESS="zstd"             # none|gzip|zstd
 BACKUP_DIR="/backups/postgres"
 LOG_DIR="/var/log/pg-backup"
 </pre>
 
-<p><span class="green">/etc/pg-backup.d/&lt;profile&gt;.conf</span>:</p>
+<h2>5. Профили (пример)</h2>
 <pre>PROFILE_NAME="nightly"
 INCLUDE_DBS=""                             # пусто=все (кроме EXCLUDE_DBS)
-EXCLUDE_DBS="template0 template1 postgres" # если INCLUDE_DBS не пуст — EXCLUDE игнорируется
+EXCLUDE_DBS="template0 template1 postgres" # игнорируется, если INCLUDE_DBS не пуст
 JOBS="4"
 KEEP_DAYS="30"
 COMPRESS="zstd"
@@ -69,23 +82,17 @@ BACKUP_DIR="/backups/postgres/nightly"
 LOG_DIR="/var/log/pg-backup"
 </pre>
 
-<h2>3. Профили</h2>
-<pre># создать
-sudo pg-backup-profile create myprofile
-sudoedit /etc/systemd/system/pg-backup@myprofile.timer  # прописать несколько OnCalendar при желании
-sudo systemctl daemon-reload
-sudo systemctl enable --now pg-backup@myprofile.timer
-
-# список / просмотр / удаление
+<h3>5.1 Управление профилями</h3>
+<pre>sudo pg-backup-profile create myprofile
 pg-backup-profile list
 pg-backup-profile show myprofile
-sudo pg-backup-profile remove myprofile  # бэкапы НЕ трогает
+sudo pg-backup-profile remove myprofile
 </pre>
-<p class="yellow">Имя профиля — это инстанс таймера. Допустимы только <span class="green">a-z</span>, <span class="green">0-9</span>, <span class="green">-</span>.</p>
+<p class="yellow">Имя профиля = инстанс таймера. Допустимы: <span class="green">a-z</span>, <span class="green">0-9</span>, <span class="green">-</span>.</p>
 
-<h2>4. Расписания (systemd OnCalendar)</h2>
-<p class="yellow">Можно несколько строк OnCalendar в одном таймере.</p>
-<pre># Каждый день в 00:00, 01:00, 05:00
+<h2>6. Расписания (systemd timers)</h2>
+<p>Файл таймера: <span class="green">/etc/systemd/system/pg-backup@&lt;profile&gt;.timer</span></p>
+<pre># ежедневно в 00:00, 01:00, 05:00
 OnCalendar=*-*-* 00:00:00
 OnCalendar=*-*-* 01:00:00
 OnCalendar=*-*-* 05:00:00
@@ -94,53 +101,88 @@ OnCalendar=*-*-* 05:00:00
 OnCalendar=*-*-01 02:30:00
 OnCalendar=*-*-17 02:30:00
 
-# Каждый понедельник в 00:00
+# каждый понедельник в 00:00
 OnCalendar=Mon *-*-* 00:00:00
-
-# Проверка выражений
-systemd-analyze calendar "Mon..Fri *-*-* 01:00:00"
-systemd-analyze calendar "Sat,Sun *-*-* 04:30:00"
 </pre>
 
-<h2>5. Проверка путей, запуск и логи</h2>
-<pre>pg-backup-locate                         # Быстро показать BACKUP_DIR/LOG_DIR по профилям
-sudo systemctl start pg-backup@nightly.service
-journalctl -u pg-backup@nightly.service -e
-ls -lt /var/log/pg-backup/ | head
-</pre>
-<p>В начале каждого лога есть строка <span class="green">ENV: …</span> (где видно <span class="green">BACKUP_DIR</span> и <span class="green">LOG_DIR</span>).</p>
+<h3>6.1 Дни недели (коды)</h3>
+<table>
+  <thead><tr><th>День</th><th class="green">Коротко</th><th>Полное</th></tr></thead>
+  <tbody>
+    <tr><td>Понедельник</td><td class="green"><code>Mon</code></td><td><code>Monday</code></td></tr>
+    <tr><td>Вторник</td><td class="green"><code>Tue</code></td><td><code>Tuesday</code></td></tr>
+    <tr><td>Среда</td><td class="green"><code>Wed</code></td><td><code>Wednesday</code></td></tr>
+    <tr><td>Четверг</td><td class="green"><code>Thu</code></td><td><code>Thursday</code></td></tr>
+    <tr><td>Пятница</td><td class="green"><code>Fri</code></td><td><code>Friday</code></td></tr>
+    <tr><td>Суббота</td><td class="green"><code>Sat</code></td><td><code>Saturday</code></td></tr>
+    <tr><td>Воскресенье</td><td class="green"><code>Sun</code></td><td><code>Sunday</code></td></tr>
+  </tbody>
+</table>
 
-<h2>6. Восстановление</h2>
+<h3>6.2 Проверка и включение</h3>
+<pre>sudo systemctl daemon-reload
+sudo systemctl enable --now pg-backup@nightly.timer
+systemctl list-timers | grep pg-backup@
+systemd-analyze calendar "Mon *-*-* 00:00:00"
+</pre>
+
+<h2>7. Логи и структура</h2>
+<ul>
+  <li>Каждый запуск — отдельный файл <span class="green">LOG_DIR/&lt;profile&gt;_YYYY-MM-DD_HH-MM-SS.log</span>.</li>
+  <li>Первая строка логов: <span class="green">ENV: …</span> (видно <span class="green">PROFILE/BACKUP_DIR/LOG_DIR/JOBS/KEEP_DAYS</span>).</li>
+</ul>
+<pre>journalctl -u pg-backup@nightly.service -e
+ls -lt /var/log/pg-backup | head
+</pre>
+
+<h2>8. Где лежат бэкапы</h2>
+<pre>pg-backup-locate
+ls -lh /backups/postgres/nightly
+</pre>
+
+<h2>9. Ручной запуск и тест</h2>
+<pre>sudo systemctl start pg-backup@nightly.service
+sudo pg-backup-test -p nightly --timeout 30
+</pre>
+
+<h2>10. Восстановление</h2>
 <pre># интерактивно
-pg_restore_select.sh
+PROFILE=nightly BACKUP_DIR=/backups/postgres pg_restore_select.sh
 
-# без вопросов (пример)
+# без вопросов
 pg_restore_select.sh --non-interactive --select-file /backups/postgres/nightly/2025-08-10_02-15-00_billing.dump.zst \\
   --db billing_restored --jobs 6 --force-drop
 </pre>
 
-<h2>7. Почтовые отчёты</h2>
-<p>Нужны <span class="yellow">mailutils/bsd-mailx/msmtp</span> и <span class="green">MAIL_TO/MAIL_FROM</span>. Тема письма содержит <span class="green">SUCCESS</span> или <span class="red">FAIL</span>, тело — лог прогона.</p>
+<h2>11. Почтовые отчёты</h2>
+<p>Если настроен MTA и заданы <span class="green">MAIL_TO</span>/<span class="green">MAIL_FROM</span>, придёт письмо с темой <span class="green">SUCCESS</span> или <span class="red">FAIL</span> и телом лога.</p>
 
-<h2>8. Хуки</h2>
-<p><span class="green">/etc/pg-backup.hooks/pre.d</span> — до старта;<br>
-<span class="green">/etc/pg-backup.hooks/post-db.d</span> — после КАЖДОЙ БД (ENV: <code>DB_NAME</code>, <code>ARTIFACT_PATH</code>);<br>
-<span class="green">/etc/pg-backup.hooks/post.d</span> — после всего профиля.</p>
-
-<h2>9. Диагностика и частые ошибки</h2>
+<h2>12. Хуки</h2>
 <ul>
-  <li><span class="red">Нет pg_dump/psql:</span> поставь <span class="yellow">postgresql-client</span> или клиент Postgres Pro.</li>
-  <li><span class="red">Permission denied:</span> проверь <span class="green">pgbackup:pgbackup</span> и права на <span class="green">BACKUP_DIR/LOG_DIR</span>.</li>
-  <li><span class="red">Таймер молчит:</span> проверь <span class="green">OnCalendar</span>, <code>systemctl daemon-reload</code>, статус <span class="green">enabled</span>.</li>
+  <li><span class="green">/etc/pg-backup.hooks/pre.d/</span> — до начала бэкапа.</li>
+  <li><span class="green">/etc/pg-backup.hooks/post-db.d/</span> — после каждой БД, ENV: <span class="green">DB_NAME</span>, <span class="green">ARTIFACT_PATH</span>.</li>
+  <li><span class="green">/etc/pg-backup.hooks/post.d/</span> — после завершения профиля.</li>
+</ul>
+<p>Скрипты должны быть исполняемыми (<code>chmod +x</code>). Ошибки хуков не валят бэкап — логгируются.</p>
+
+<h2>13. Безопасность</h2>
+<ul>
+  <li><span class="red">umask 077</span>, приватные каталоги и файлы.</li>
+  <li>Пользователь <span class="green">pgbackup</span>; пароли — в <span class="green">/home/pgbackup/.pgpass</span> (600).</li>
+  <li>systemd sandbox: <span class="green">NoNewPrivileges</span>, <span class="green">PrivateTmp</span>, <span class="green">ProtectSystem</span>, <span class="green">ProtectHome</span>.</li>
+  <li>Шифрование: <span class="green">ENCRYPT_GPG=true</span> + <span class="green">GPG_RECIPIENT</span>.</li>
 </ul>
 
-<h2>10. Тестовый прогон</h2>
-<pre>sudo pg-backup-test -p nightly           # запустить и проверить, что артефакт появился и читается
-sudo pg-backup-test -p nightly --timeout 30
-</pre>
+<h2>14. Диагностика (частые ошибки)</h2>
+<ul>
+  <li><span class="red">pg_dump: not found</span> — поставь <span class="yellow">postgresql-client</span> или клиент Postgres Pro.</li>
+  <li><span class="red">Permission denied</span> — проверь права <span class="green">pgbackup:pgbackup</span> на <span class="green">BACKUP_DIR/LOG_DIR</span>.</li>
+  <li><span class="red">Таймер не срабатывает</span> — проверь <span class="green">OnCalendar</span>, <code>systemctl daemon-reload</code>, статус таймера.</li>
+</ul>
 
 <hr />
 <p><small>Версия документа: <span class="green">1.3.3</span></small></p>
+
 </main>
 </body>
 </html>
