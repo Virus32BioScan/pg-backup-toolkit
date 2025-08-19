@@ -1,0 +1,2 @@
+Конфиг: /etc/pg-backup/default.env
+Можно задать PG_BINDIR=/usr/pgpro/1c-17/bin для PostgresPro 1C.

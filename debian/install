@@ -1,0 +1,9 @@
+scripts/*                          opt/pg-backup-toolkit/scripts/
+hooks/pre-backup.d                 opt/pg-backup-toolkit/hooks/
+hooks/post-backup.d                opt/pg-backup-toolkit/hooks/
+systemd/pg-backup@.service         lib/systemd/system/
+systemd/pg-backup@.timer           lib/systemd/system/
+README.md                          usr/share/doc/pg-backup-toolkit/
+LICENSE                            usr/share/doc/pg-backup-toolkit/
+config/.env.example                usr/share/doc/pg-backup-toolkit/examples/
+packaging/default.env              etc/pg-backup/default.env

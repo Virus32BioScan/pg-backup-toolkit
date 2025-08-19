@@ -1,0 +1,7 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: pg-backup-toolkit
+Source: https://github.com/Virus32BioScan/pg-backup-toolkit
+
+Files: *
+Copyright: 2025 Anton
+License: MIT

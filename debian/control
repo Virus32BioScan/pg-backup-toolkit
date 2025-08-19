@@ -1,0 +1,25 @@
+Source: pg-backup-toolkit
+Section: admin
+Priority: optional
+Maintainer: Anton <maintainer@example.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Homepage: https://github.com/Virus32BioScan/pg-backup-toolkit
+
+Package: pg-backup-toolkit
+Architecture: all
+Depends:
+  bash,
+  coreutils,
+  findutils,
+  gzip,
+  tar,
+  zstd,
+  systemd,
+  postgresql-client | postgrespro-1c-17-client | postgrespro-std-17-client
+Recommends:
+  awscli | s5cmd
+Description: PostgreSQL backup/restore toolkit with rotation & systemd timer
+ Toolkit вокруг pg_dump/pg_dumpall/pg_basebackup с ротацией, чексуммами,
+ опциональной выгрузкой в S3 и systemd-таймером. Совместим с PostgresPro 1C.

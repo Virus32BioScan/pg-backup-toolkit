@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+mkdir -p /etc/pg-backup
+chmod 0750 /etc/pg-backup || true
+if command -v systemctl >/dev/null 2>&1; then
+  systemctl daemon-reload || true
+fi
+echo "pg-backup-toolkit installed. Check /etc/pg-backup/default.env"
